@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Promemoria oratori</title>
+<style>
+:root{
+  --bg:#f6f5f1; --card:#fff; --ink:#1d2421; --muted:#68716c; --line:#e3e1da;
+  --accent:#1f7a55; --accent-ink:#fff; --accent-soft:#e3f1ea;
+  --warn:#a5560b; --warn-soft:#fbefdf; --bad:#a23a2f; --bad-soft:#f8e4e1;
+  --today:#1f5fa8; --today-soft:#e2ecf8;
+  --r:12px;
+}
+@media (prefers-color-scheme: dark){
+  :root{--bg:#141816;--card:#1d2220;--ink:#e8ece9;--muted:#9aa49f;--line:#2e3532;
+  --accent:#3fb183;--accent-ink:#0d1a14;--accent-soft:#1d3229;--warn:#e7a55a;--warn-soft:#3a2b19;
+  --bad:#ec8a7e;--bad-soft:#3b2220;--today:#7fb0ec;--today-soft:#1b2a3d;}
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+header{padding:20px 16px 8px;max-width:820px;margin:0 auto}
+h1{font-size:22px;margin:0 0 2px;letter-spacing:-.01em}
+.sub{color:var(--muted);font-size:14px}
+main{max-width:820px;margin:0 auto;padding:8px 16px 60px}
+nav.tabs{display:flex;gap:6px;overflow-x:auto;padding:8px 0 12px;position:sticky;top:0;background:var(--bg);z-index:5}
+nav.tabs button{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:7px 13px;border-radius:999px;font:inherit;font-size:14px;white-space:nowrap;cursor:pointer}
+nav.tabs button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+nav.tabs .n{opacity:.7;margin-left:4px;font-variant-numeric:tabular-nums}
+section.panel{display:none}
+section.panel.on{display:block}
+.box{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:12px}
+.box h2{font-size:16px;margin:0 0 4px}
+.box p{margin:4px 0 10px;color:var(--muted);font-size:14px}
+.drop{display:flex;align-items:center;gap:12px;border:1.5px dashed var(--line);border-radius:10px;padding:14px;cursor:pointer}
+.drop:hover,.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.drop input{display:none}
+.drop .ic{width:38px;height:38px;border-radius:9px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;flex:none;font-weight:700}
+.drop .t{font-weight:600}
+.drop .s{color:var(--muted);font-size:13px}
+.ok{color:var(--accent)} .ko{color:var(--bad)}
+label.f{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
+input[type=text],input[type=tel],textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 10px}
+textarea{min-height:170px;resize:vertical;line-height:1.45}
+input:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:transparent}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+@media (max-width:560px){.grid2{grid-template-columns:1fr}}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chips button{font:12px/1 ui-monospace,SFMono-Regular,Menlo,monospace;border:1px solid var(--line);background:var(--bg);color:var(--ink);padding:6px 8px;border-radius:6px;cursor:pointer}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:9px 14px;border-radius:9px;font:inherit;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none}
+.btn.wa{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.wa[aria-disabled=true]{opacity:.45;pointer-events:none}
+.btn.ghost{background:transparent}
+.btn.sm{padding:6px 10px;font-size:13px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.grp{margin:18px 0 8px;font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;display:flex;align-items:center;gap:8px}
+.grp .pill{text-transform:none;letter-spacing:0}
+.talk{background:var(--card);border:1px solid var(--line);border-radius:var(--r);margin-bottom:10px;overflow:hidden}
+.talk.today{border-color:var(--today);box-shadow:0 0 0 1px var(--today)}
+.talk.sent{opacity:.72}
+.talk .hd{display:flex;gap:12px;padding:12px 14px;cursor:pointer;align-items:flex-start}
+.date{flex:none;width:54px;text-align:center;border-radius:9px;background:var(--bg);padding:6px 0}
+.date .d{font-size:20px;font-weight:700;line-height:1.1}
+.date .m{font-size:11px;text-transform:uppercase;color:var(--muted);letter-spacing:.05em}
+.info{flex:1;min-width:0}
+.info .nm{font-weight:650}
+.info .cg{color:var(--muted);font-size:13px}
+.info .tm{font-size:13.5px;margin-top:3px;overflow:hidden;text-overflow:ellipsis}
+.pills{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+.pill{font-size:12px;padding:2px 8px;border-radius:999px;background:var(--bg);color:var(--muted);white-space:nowrap}
+.pill.today{background:var(--today-soft);color:var(--today);font-weight:600}
+.pill.late{background:var(--warn-soft);color:var(--warn);font-weight:600}
+.pill.sent{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.pill.bad{background:var(--bad-soft);color:var(--bad);font-weight:600}
+.talk .bd{display:none;padding:0 14px 14px;border-top:1px solid var(--line)}
+.talk.open .bd{display:block}
+.chev{flex:none;color:var(--muted);transition:transform .15s;margin-top:4px}
+.talk.open .chev{transform:rotate(90deg)}
+.empty{text-align:center;color:var(--muted);padding:40px 16px}
+.note{font-size:13px;color:var(--muted);margin-top:8px}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%) translateY(80px);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;transition:transform .2s;z-index:20;max-width:90vw}
+.toast.on{transform:translateX(-50%) translateY(0)}
+.search{margin-bottom:6px}
+table.sp{width:100%;border-collapse:collapse;font-size:14px}
+table.sp td{padding:7px 4px;border-bottom:1px solid var(--line);vertical-align:top}
+table.sp td.ph{font-variant-numeric:tabular-nums;white-space:nowrap}
+#status{font-size:12.5px;color:var(--muted);margin-top:4px}
+#status.err{color:var(--bad);font-weight:600}
+#login{position:fixed;inset:0;background:var(--bg);z-index:30;display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;overflow:auto}
+#login.hidden{display:none}
+#login .box{max-width:440px;width:100%}
+#login input[type=password]{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 10px}
+.err{color:var(--bad);font-size:13.5px;min-height:1em}
+.hidden{display:none!important}
+ol.steps{padding-left:20px;margin:6px 0 4px;font-size:14px;color:var(--muted)}
+ol.steps li{margin:3px 0}
+</style>
+</head>
+<body>
+<header>
+  <h1>Promemoria oratori</h1>
+  <div class="sub" id="headSub">Carica il programma e gli oratori per iniziare.</div>
+  <div id="status"></div>
+</header>
+<div id="login">
+  <form class="box" id="loginForm" autocomplete="on">
+    <h2 style="font-size:20px">Promemoria oratori</h2>
+    <div id="lgOpen">
+      <p>I dati sono salvati su GitHub, cifrati. Inserisci la password per aprirli.</p>
+      <input type="text" name="username" value="promemoria-oratori" autocomplete="username" class="hidden">
+      <label class="f" for="lgPw">Password</label>
+      <input type="password" id="lgPw" autocomplete="current-password">
+    </div>
+    <div id="lgSetup" class="hidden">
+      <p>Prima configurazione: i dati verranno salvati nel file <b>dati.json</b> del repository, cifrati con una password che scegli tu.</p>
+      <label class="f" for="lgNew">Scegli una password (almeno 10 caratteri)</label>
+      <input type="password" id="lgNew" autocomplete="new-password">
+      <label class="f" for="lgNew2">Ripeti la password</label>
+      <input type="password" id="lgNew2" autocomplete="new-password">
+      <label class="f" for="lgTok">Token di GitHub</label>
+      <input type="text" id="lgTok" placeholder="github_pat_…" autocomplete="off">
+      <ol class="steps">
+        <li>Apri <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a></li>
+        <li>Nome: <i>promemoria-oratori</i>; scadenza a piacere</li>
+        <li>Repository access → <b>Only select repositories</b> → <b id="repoName2"></b></li>
+        <li>Permissions → <b>Contents: Read and write</b></li>
+        <li>Genera il token e incollalo qui (viene salvato cifrato con la password)</li>
+      </ol>
+    </div>
+    <label class="row" style="margin-top:12px;font-size:14px"><input type="checkbox" id="lgRemember" checked> Ricorda su questo dispositivo</label>
+    <p class="err" id="lgErr"></p>
+    <button class="btn wa" id="lgBtn" style="width:100%">Apri</button>
+  </form>
+</div>
+<main>
+  <nav class="tabs" id="tabs">
+    <button data-p="invio">Da inviare <span class="n" id="nInvio"></span></button>
+    <button data-p="inviati">Inviati <span class="n" id="nInviati"></span></button>
+    <button data-p="tutti">Tutto il programma</button>
+    <button data-p="messaggio">Messaggio</button>
+    <button data-p="oratori">Oratori</button>
+    <button data-p="importa">Importa file</button>
+  </nav>
+
+  <section class="panel" id="p-invio"></section>
+  <section class="panel" id="p-inviati"></section>
+  <section class="panel" id="p-tutti"></section>
+
+  <section class="panel" id="p-messaggio">
+    <div class="box">
+      <h2>Messaggio predefinito</h2>
+      <p>Il testo di partenza per ogni oratore. Puoi comunque modificarlo per il singolo oratore prima di inviarlo.</p>
+      <textarea id="tpl"></textarea>
+      <div class="chips" id="chips"></div>
+      <p class="note" id="tplNote" style="display:none"></p>
+      <div class="row" style="margin-top:12px"><button class="btn sm ghost" id="tplReset">Ripristina testo originale</button></div>
+    </div>
+    <div class="box">
+      <h2>Dati della tua congregazione</h2>
+      <p>Usati nei segnaposto del messaggio.</p>
+      <div class="grid2">
+        <div><label class="f" for="sCong">Congregazione ospitante</label><input type="text" id="sCong" placeholder="es. San Cataldo Casale"></div>
+        <div><label class="f" for="sOra">Orario adunanza</label><input type="text" id="sOra" placeholder="es. 10:00"></div>
+        <div><label class="f" for="sSala">Indirizzo Sala del Regno</label><input type="text" id="sSala" placeholder="es. Via …, San Cataldo"></div>
+        <div><label class="f" for="sFirma">Firma</label><input type="text" id="sFirma" placeholder="es. Lucio La China"></div>
+      </div>
+      <label class="f" for="sMaps">Link Google Maps della Sala (facoltativo) — in Google Maps cerca la Sala, premi «Condividi» e incolla qui il link. Se lo lasci vuoto viene creato dall'indirizzo.</label>
+      <input type="text" id="sMaps" placeholder="https://maps.app.goo.gl/…">
+      <p class="note" id="mapsNote"></p>
+      <label class="f" for="sSong">Domanda sul cantico — va al posto di {richiesta_cantico} solo se nel programma il cantico non è indicato</label>
+      <input type="text" id="sSong">
+    </div>
+    <div class="box">
+      <h2>Anteprima</h2>
+      <p id="prevWho">Con il primo discorso in programma.</p>
+      <div id="prev" style="white-space:pre-wrap;background:var(--bg);border-radius:8px;padding:12px;font-size:14px"></div>
+    </div>
+  </section>
+
+  <section class="panel" id="p-oratori">
+    <div class="box">
+      <input type="text" class="search" id="spSearch" placeholder="Cerca oratore o congregazione…">
+      <div id="spList"></div>
+    </div>
+  </section>
+
+  <section class="panel" id="p-importa">
+    <div class="box">
+      <h2>1. Programma dei discorsi</h2>
+      <p>Il file CSV esportato (es. <i>discorsi.csv</i>).</p>
+      <label class="drop" id="dropProg"><input type="file" id="fProg" accept=".csv,text/csv"><span class="ic">CSV</span><span><span class="t">Scegli il programma</span><br><span class="s" id="stProg">Nessun file caricato</span></span></label>
+    </div>
+    <div class="box">
+      <h2>2. Oratori</h2>
+      <p>Il file ZIP con un CSV per congregazione (puoi anche selezionare direttamente più CSV).</p>
+      <label class="drop" id="dropSp"><input type="file" id="fSp" accept=".zip,.csv,application/zip,text/csv" multiple><span class="ic">ZIP</span><span><span class="t">Scegli gli oratori</span><br><span class="s" id="stSp">Nessun file caricato</span></span></label>
+    </div>
+    <div class="box">
+      <h2>Salvataggio su GitHub</h2>
+      <p>Programma, oratori, messaggi e invii sono salvati cifrati nel file <b>dati.json</b> del repository <b id="repoName"></b>: li ritrovi da qualsiasi dispositivo con la password. Quando esporti un programma aggiornato, ricaricalo qui: gli invii già fatti vengono mantenuti.</p>
+      <p id="accStato"></p>
+      <div class="row" style="margin-bottom:10px">
+        <button class="btn sm" id="btnTok">Cambia token GitHub</button>
+        <button class="btn sm" id="btnPw">Cambia password</button>
+        <button class="btn sm ghost" id="btnLogout">Esci da questo dispositivo</button>
+      </div>
+      <div id="tokBox" class="hidden" style="margin-bottom:10px">
+        <label class="f" for="tokIn">Nuovo token (Contents: Read and write sul repository)</label>
+        <input type="text" id="tokIn" placeholder="github_pat_…" autocomplete="off">
+        <p class="err" id="tokErr"></p>
+        <div class="row"><button class="btn sm" id="tokOk">Salva token</button><button class="btn sm ghost" id="tokNo">Annulla</button></div>
+      </div>
+      <div id="pwBox" class="hidden" style="margin-bottom:10px">
+        <label class="f" for="pwOld">Password attuale</label><input type="password" id="pwOld" autocomplete="current-password" style="width:100%;font:inherit;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)">
+        <label class="f" for="pwNew">Nuova password (almeno 10 caratteri)</label><input type="password" id="pwNew" autocomplete="new-password" style="width:100%;font:inherit;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)">
+        <label class="f" for="pwNew2">Ripeti la nuova password</label><input type="password" id="pwNew2" autocomplete="new-password" style="width:100%;font:inherit;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)">
+        <p class="err" id="pwErr"></p>
+        <div class="row"><button class="btn sm" id="pwOk">Cambia password</button><button class="btn sm ghost" id="pwNo">Annulla</button></div>
+      </div>
+      <button class="btn sm ghost" id="wipe">Cancella tutti i dati</button>
+      <div id="wipeConfirm" style="display:none;margin-top:10px" class="row"><span class="ko">Sicuro? Si cancellano programma, oratori e invii anche su GitHub.</span><button class="btn sm" id="wipeYes">Sì, cancella</button><button class="btn sm ghost" id="wipeNo">Annulla</button></div>
+    </div>
+  </section>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+/* ---------- storage ---------- */
+const LS = {
+  get(k, d){ try{ const v = localStorage.getItem("po_"+k); return v==null ? d : JSON.parse(v); }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem("po_"+k, JSON.stringify(v)); }catch(e){} }
+};
+const DEFAULT_TPL =
+`Ciao {nome}! 👋
+Ti ricordo che domenica prossima, {data}, sei atteso alla congregazione di {congregazione_ospitante} per il discorso pubblico {discorso}.
+
+📍 {sala}
+🗺️ {mappa}
+🕙 Adunanza alle {orario}
+
+Mi fai sapere se rimani per tutta l'adunanza e se sei disponibile a fermarti per l'ospitalità?
+Se durante il discorso ci sono immagini da proiettare, me le puoi inviare?
+{richiesta_cantico}
+
+Grazie e a presto!
+{firma}`;
+const DEFAULT_SONG_ASK = "Mi invieresti anche il numero del cantico?";
+
+const state = {
+  program: [], speakers: [], sent: {}, custom: {}, phones: {}, tpl: DEFAULT_TPL,
+  settings: {}, progName: "", spName: "",
+  open: new Set(), tab: LS.get("tab", null)
+};
+const SHARED = ["program","speakers","sent","custom","phones","tpl","settings","progName","spName"];
+function setShared(d){
+  d = d || {};
+  state.program = d.program || []; state.speakers = d.speakers || [];
+  state.sent = d.sent || {}; state.custom = d.custom || {}; state.phones = d.phones || {};
+  state.tpl = d.tpl || DEFAULT_TPL;
+  state.settings = Object.assign({cong:"", ora:"", sala:"", firma:"", maps:"", songAsk:DEFAULT_SONG_ASK}, d.settings || {});
+  state.progName = d.progName || ""; state.spName = d.spName || "";
+}
+const getShared = () => Object.fromEntries(SHARED.map(k=>[k,state[k]]));
+setShared({});
+
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const norm = s => String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/['’`]/g,"").replace(/\s+/g," ").trim();
+let toastT;
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("on"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("on"),2600); }
+
+function decodeBytes(u8){
+  let s;
+  try{ s = new TextDecoder("utf-8",{fatal:true}).decode(u8); }
+  catch(e){ s = new TextDecoder("windows-1252").decode(u8); }
+  return s.replace(/^﻿/,"");
+}
+function parseCSV(text){
+  const first = text.split(/\r?\n/)[0] || "";
+  const cnt = ch => first.split(ch).length;
+  const d = [",",";","\t"].sort((a,b)=>cnt(b)-cnt(a))[0];
+  const rows=[]; let row=[], f="", q=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(q){ if(c==='"'){ if(text[i+1]==='"'){f+='"';i++;} else q=false; } else f+=c; }
+    else if(c==='"') q=true;
+    else if(c===d){ row.push(f); f=""; }
+    else if(c==="\n"||c==="\r"){ if(c==="\r"&&text[i+1]==="\n") i++; row.push(f); rows.push(row); row=[]; f=""; }
+    else f+=c;
+  }
+  if(f!==""||row.length){ row.push(f); rows.push(row); }
+  const hdr = (rows.shift()||[]).map(h=>norm(h).replace(/\s/g,""));
+  return rows.filter(r=>r.some(x=>x.trim()!=="")).map(r=>{ const o={}; hdr.forEach((h,i)=>o[h]=(r[i]??"").trim()); return o; });
+}
+const pick = (o, names) => { for(const n of names){ if(o[n]!=null && o[n]!=="") return o[n]; } return ""; };
+
+function parseDate(s){
+  s = String(s||"").trim(); let m;
+  if((m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))) return iso(+m[1],+m[2],+m[3]);
+  if((m = s.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})/))){ let y=+m[3]; if(y<100) y+=2000; return iso(y,+m[2],+m[1]); }
+  return null;
+}
+const iso = (y,m,d) => `${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+const toD = s => { const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,d); };
+const dISO = dt => iso(dt.getFullYear(), dt.getMonth()+1, dt.getDate());
+const todayISO = () => dISO(new Date());
+function mondayBefore(s){ const dt=toD(s); const back=((dt.getDay()+6)%7)||7; dt.setDate(dt.getDate()-back); return dISO(dt); }
+const fmtLong = s => toD(s).toLocaleDateString("it-IT",{weekday:"long",day:"numeric",month:"long"});
+const fmtLongY = s => toD(s).toLocaleDateString("it-IT",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+const fmtShort = s => toD(s).toLocaleDateString("it-IT",{day:"2-digit",month:"2-digit",year:"numeric"});
+const fmtDM = s => toD(s).toLocaleDateString("it-IT",{day:"numeric",month:"long"});
+
+function cleanPhone(p){
+  let d = String(p||"").replace(/[^\d+]/g,"");
+  if(!d) return "";
+  if(d.startsWith("+")) d = d.slice(1);
+  else if(d.startsWith("00")) d = d.slice(2);
+  else if(d.length<=10 && /^[03]/.test(d)) d = "39"+d;
+  return d.replace(/\D/g,"");
+}
+const showPhone = d => d ? "+"+d.replace(/^39(\d{3})(\d{3})(\d+)$/,"39 $1 $2 $3") : "";
+
+/* ---------- ZIP (native, no libraries) ---------- */
+async function unzip(buf){
+  const dv = new DataView(buf), u8 = new Uint8Array(buf), out=[];
+  let e = -1;
+  for(let i=u8.length-22;i>=Math.max(0,u8.length-65558);i--){ if(dv.getUint32(i,true)===0x06054b50){ e=i; break; } }
+  if(e<0) throw new Error("ZIP non valido");
+  const n = dv.getUint16(e+10,true); let p = dv.getUint32(e+16,true);
+  for(let k=0;k<n;k++){
+    if(dv.getUint32(p,true)!==0x02014b50) break;
+    const method=dv.getUint16(p+10,true), csize=dv.getUint32(p+20,true),
+          nl=dv.getUint16(p+28,true), xl=dv.getUint16(p+30,true), cl=dv.getUint16(p+32,true), lo=dv.getUint32(p+42,true);
+    const name = decodeBytes(u8.subarray(p+46,p+46+nl));
+    p += 46+nl+xl+cl;
+    if(name.endsWith("/") || /(^|\/)__MACOSX\//.test(name) || /(^|\/)\./.test(name)) continue;
+    const start = lo+30+dv.getUint16(lo+26,true)+dv.getUint16(lo+28,true);
+    const raw = u8.slice(start,start+csize);
+    let data;
+    if(method===0) data = raw;
+    else if(method===8){
+      const ds = new Blob([raw]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+      data = new Uint8Array(await new Response(ds).arrayBuffer());
+    } else continue;
+    out.push({name, data});
+  }
+  return out;
+}
+
+/* ---------- import ---------- */
+function importProgram(text){
+  const rows = parseCSV(text), out=[];
+  for(const r of rows){
+    const date = parseDate(pick(r,["date","data"]));
+    const speaker = pick(r,["publicspeaker","speaker","oratore"]);
+    if(!date || !speaker) continue;
+    let num = pick(r,["outlinenumber","numero","number","n"]);
+    let title = pick(r,["outlinename","tema","titolo","title"]);
+    title = title.replace(/^\s*\d+\s*[-–.]\s*/,"").trim();
+    out.push({date, cong:pick(r,["congregation","congregazione"]).trim(), speaker:speaker.trim(), num, title, song:pick(r,["song","cantico"])});
+  }
+  out.sort((a,b)=>a.date.localeCompare(b.date));
+  return out;
+}
+function importSpeakers(text, fileCong){
+  return parseCSV(text).map(r=>({
+    cong: (pick(r,["congregation","congregazione"])||fileCong).trim(),
+    first: pick(r,["firstname","nome"]).trim(),
+    last: pick(r,["lastname","cognome"]).trim(),
+    phone: pick(r,["phonemobile","cellulare","mobile","phone","telefono"]),
+    email: pick(r,["email"]),
+    talks: pick(r,["publictalkscangive","discorsi"])
+  })).filter(s=>s.first||s.last);
+}
+
+function setupDrop(el, input){
+  ["dragenter","dragover"].forEach(ev=>el.addEventListener(ev,e=>{e.preventDefault();el.classList.add("over");}));
+  ["dragleave","drop"].forEach(ev=>el.addEventListener(ev,e=>{e.preventDefault();el.classList.remove("over");}));
+  el.addEventListener("drop",e=>{ if(e.dataTransfer.files.length) input.onchange({target:{files:e.dataTransfer.files}}); });
+}
+$("#fProg").onchange = async ev => {
+  const f = ev.target.files[0]; if(!f) return;
+  try{
+    const prog = importProgram(decodeBytes(new Uint8Array(await f.arrayBuffer())));
+    if(!prog.length) throw new Error("nessun discorso trovato");
+    state.program = prog; state.progName = f.name;
+    save(); save();
+    toast(`Programma caricato: ${prog.length} discorsi`);
+    renderAll();
+    if(state.speakers.length) go("invio");
+  }catch(e){ $("#stProg").innerHTML = `<span class="ko">Errore: ${esc(e.message)}</span>`; }
+};
+$("#fSp").onchange = async ev => {
+  const files = [...ev.target.files]; if(!files.length) return;
+  try{
+    let list=[];
+    for(const f of files){
+      const buf = await f.arrayBuffer();
+      if(/\.zip$/i.test(f.name) || new DataView(buf).getUint32(0,true)===0x04034b50){
+        for(const z of await unzip(buf)){
+          if(!/\.csv$/i.test(z.name)) continue;
+          const base = z.name.split("/").pop().replace(/\.csv$/i,"");
+          list = list.concat(importSpeakers(decodeBytes(z.data), base));
+        }
+      } else list = list.concat(importSpeakers(decodeBytes(new Uint8Array(buf)), f.name.replace(/\.csv$/i,"")));
+    }
+    if(!list.length) throw new Error("nessun oratore trovato");
+    state.speakers = list; state.spName = files.map(f=>f.name).join(", ");
+    save(); save();
+    toast(`Oratori caricati: ${list.length}`);
+    renderAll();
+    if(state.program.length) go("invio");
+  }catch(e){ $("#stSp").innerHTML = `<span class="ko">Errore: ${esc(e.message)}</span>`; }
+};
+setupDrop($("#dropProg"), $("#fProg"));
+setupDrop($("#dropSp"), $("#fSp"));
+
+/* ---------- matching ---------- */
+function findSpeaker(t){
+  const n = norm(t.speaker), c = norm(t.cong), sp = state.speakers;
+  const full = s => norm(s.first+" "+s.last), rev = s => norm(s.last+" "+s.first);
+  const tries = [
+    s => norm(s.cong)===c && (full(s)===n || rev(s)===n),
+    s => full(s)===n || rev(s)===n,
+    s => norm(s.cong)===c && (norm(s.first)===n || norm(s.last)===n),
+  ];
+  for(const fn of tries){ const m = sp.filter(fn); if(m.length===1) return m[0]; if(m.length>1) return m.find(s=>norm(s.cong)===c)||m[0]; }
+  return null;
+}
+const keyOf = t => t.date+"|"+norm(t.speaker);
+const spKey = t => norm(t.speaker)+"|"+norm(t.cong);
+
+function enrich(t){
+  const s = findSpeaker(t);
+  const manual = state.phones[spKey(t)];
+  const phone = cleanPhone(manual || (s && s.phone) || "");
+  const sendOn = mondayBefore(t.date);
+  const key = keyOf(t);
+  return {...t, s, phone, manualPhone: !!manual, sendOn, key, sentOn: state.sent[key]||null};
+}
+
+/* ---------- message ---------- */
+function vars(e){
+  const st = state.settings;
+  const first = e.s ? e.s.first : e.speaker.split(" ")[0];
+  const discorso = e.num ? `n. ${e.num}${e.title?` «${e.title}»`:""}` : "(tema ancora da definire)";
+  return {
+    nome: first, cognome: e.s ? e.s.last : e.speaker.split(" ").slice(1).join(" "),
+    nome_completo: e.s ? `${e.s.first} ${e.s.last}` : e.speaker,
+    data: fmtDM(e.date), data_completa: fmtLongY(e.date), data_breve: fmtShort(e.date),
+    giorno: toD(e.date).toLocaleDateString("it-IT",{weekday:"long"}),
+    numero: e.num||"", tema: e.title||"", discorso, cantico: e.song||"", richiesta_cantico: e.song ? "" : (st.songAsk||""),
+    congregazione: e.s ? e.s.cong : e.cong,
+    congregazione_ospitante: st.cong||"…", sala: st.sala||"…", mappa: mapsLink()||"…", orario: st.ora||"…", firma: st.firma||""
+  };
+}
+const Q_HOSP = "Mi fai sapere se rimani per tutta l'adunanza e se sei disponibile a fermarti per l'ospitalità?";
+const Q_IMG = "Se durante il discorso ci sono immagini da proiettare, me le puoi inviare?";
+// Make sure every message contains the required questions, even with an older saved template
+function ensureSong(tpl){
+  const lines = tpl.split("\n");
+  const need = [];
+  if(!/ospitalit/i.test(tpl)) need.push(Q_HOSP);
+  if(!/immagin/i.test(tpl)) need.push(Q_IMG);
+  if(!tpl.includes("{richiesta_cantico}")) need.push("{richiesta_cantico}");
+  let lines0 = lines;
+  if(!/\{mappa\}|google\.[a-z.]+\/maps|maps\.app\.goo\.gl/i.test(tpl)){
+    const k = lines0.findIndex(l=>l.includes("{sala}"));
+    if(k>=0){ lines0.splice(k+1,0,"🗺️ {mappa}"); tpl = lines0.join("\n"); }
+  }
+  if(!need.length) return tpl;
+  let i = -1;
+  lines.forEach((l,k)=>{ if(/ospitalit|immagin|\{richiesta_cantico\}/i.test(l)) i = k; });
+  if(i<0){ // before the closing paragraph
+    let j = lines.length-1; while(j>0 && lines[j].trim()==="") j--;
+    while(j>0 && lines[j-1].trim()!=="") j--;
+    i = j>0 ? j-1 : lines.length-1;
+  }
+  lines.splice(i+1,0,...need);
+  return lines.join("\n");
+}
+function mapsLink(){
+  const st = state.settings, m = (st.maps||"").trim();
+  if(m) return m;
+  return st.sala ? "https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(st.sala.trim()) : "";
+}
+const fill = (tpl, v) => tpl.replace(/\{(\w+)\}/g,(m,k)=> k in v ? v[k] : m).replace(/[ \t]+$/gm,"").replace(/\n{3,}/g,"\n\n").trim();
+const msgFor = e => state.custom[e.key] ?? fill(ensureSong(state.tpl), vars(e));
+const waLink = (e, txt) => `https://wa.me/${e.phone}?text=${encodeURIComponent(txt)}`;
+
+/* ---------- render ---------- */
+function card(e){
+  const today = todayISO();
+  const isToday = !e.sentOn && e.sendOn===today;
+  const late = !e.sentOn && e.sendOn<today && e.date>=today;
+  const pills = [];
+  if(e.sentOn) pills.push(`<span class="pill sent">✓ Inviato ${fmtDM(e.sentOn)}</span>`);
+  else if(isToday) pills.push(`<span class="pill today">Da inviare oggi</span>`);
+  else if(late) pills.push(`<span class="pill late">Da inviare (era lunedì ${fmtDM(e.sendOn)})</span>`);
+  else if(e.date>=today) pills.push(`<span class="pill">Invio lunedì ${fmtDM(e.sendOn)}</span>`);
+  if(!e.phone) pills.push(`<span class="pill bad">Numero mancante</span>`);
+  if(!e.num) pills.push(`<span class="pill">Tema da definire</span>`);
+  pills.push(e.song ? `<span class="pill">Cantico ${esc(e.song)}</span>` : `<span class="pill">Cantico da chiedere</span>`);
+  const dt = toD(e.date);
+  const txt = msgFor(e);
+  const open = state.open.has(e.key);
+  return `<div class="talk${isToday?" today":""}${e.sentOn?" sent":""}${open?" open":""}" data-k="${esc(e.key)}">
+    <div class="hd" data-act="toggle">
+      <div class="date"><div class="d">${dt.getDate()}</div><div class="m">${dt.toLocaleDateString("it-IT",{month:"short"})}</div></div>
+      <div class="info">
+        <div class="nm">${esc(e.s?`${e.s.first} ${e.s.last}`:e.speaker)}</div>
+        <div class="cg">${esc(e.s?e.s.cong:e.cong)}${e.phone?` · ${esc(showPhone(e.phone))}`:""}</div>
+        <div class="tm">${e.num?`<b>${esc(e.num)}</b> · ${esc(e.title)}`:`<span style="color:var(--muted)">Tema non ancora indicato</span>`}</div>
+        <div class="pills">${pills.join("")}</div>
+      </div>
+      <svg class="chev" width="16" height="16" viewBox="0 0 16 16"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="bd">
+      ${!e.s?`<p class="note ko">Oratore non trovato nella lista: inserisci il numero a mano.</p>`:""}
+      <label class="f">Cellulare</label>
+      <div class="row"><input type="tel" data-act="phone" value="${esc(e.phone?"+"+e.phone:"")}" placeholder="+39 3xx xxx xxxx" style="flex:1;min-width:160px">
+      ${e.manualPhone?`<button class="btn sm ghost" data-act="phoneReset">Usa numero dalla lista</button>`:""}</div>
+      <label class="f">Messaggio${state.custom[e.key]!=null?` <span class="pill">modificato</span>`:""}</label>
+      <textarea data-act="text">${esc(txt)}</textarea>
+      <div class="row" style="margin-top:10px">
+        <a class="btn wa" data-act="wa" target="_blank" rel="noopener" href="${e.phone?esc(waLink(e,txt)):"#"}" aria-disabled="${!e.phone}">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 00-8.6 15.1L2 22l5-1.3A10 10 0 1012 2zm0 18.2a8.2 8.2 0 01-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1112 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 01-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 00-.7.3 3 3 0 00-.9 2.2 5.2 5.2 0 001.1 2.7 11.8 11.8 0 004.5 4c1.7.7 2.3.8 3.2.6a2.7 2.7 0 001.7-1.2 2.1 2.1 0 00.2-1.2c-.1-.1-.3-.2-.5-.3z"/></svg>
+          Apri in WhatsApp</a>
+        <button class="btn sm" data-act="copy">Copia testo</button>
+        ${e.sentOn?`<button class="btn sm ghost" data-act="unsend">Segna come non inviato</button>`:`<button class="btn sm" data-act="send">Segna come inviato</button>`}
+        ${state.custom[e.key]!=null?`<button class="btn sm ghost" data-act="textReset">Torna al messaggio predefinito</button>`:""}
+      </div>
+      <p class="note">Discorso: ${esc(fmtLongY(e.date))}. WhatsApp si apre con il testo già scritto: devi solo premere invia.</p>
+    </div>
+  </div>`;
+}
+
+function list(){ return state.program.map(enrich); }
+
+function renderLists(){
+  const all = list(), today = todayISO();
+  const ready = state.program.length && state.speakers.length;
+
+  // Da inviare
+  const todo = all.filter(e=>!e.sentOn && e.date>=today);
+  const due = todo.filter(e=>e.sendOn<=today);
+  const later = todo.filter(e=>e.sendOn>today);
+  let h = "";
+  if(!ready){
+    h = `<div class="box"><h2>Benvenuto</h2><p>Carica il programma dei discorsi (CSV) e il file ZIP degli oratori esportati dall'app.</p><button class="btn wa" onclick="go('importa')">Importa file</button></div>`;
+  } else {
+    const st = state.settings;
+    if(!st.cong || !st.sala || !st.ora) h += `<div class="box" style="border-color:var(--warn)"><h2>Completa il messaggio</h2><p>Inserisci congregazione, indirizzo e orario: per ora nel messaggio compaiono i puntini “…”.</p><button class="btn sm" onclick="go('messaggio')">Vai al messaggio</button></div>`;
+    h += `<div class="grp">Da inviare ora <span class="pill${due.length?" today":""}">${due.length}</span></div>`;
+    h += due.length ? due.map(card).join("") : `<div class="empty">Nessun messaggio da inviare oggi. 🎉</div>`;
+    const byMon = {};
+    later.forEach(e=>(byMon[e.sendOn]=byMon[e.sendOn]||[]).push(e));
+    Object.keys(byMon).sort().forEach(m=>{
+      h += `<div class="grp">Lunedì ${esc(fmtDM(m))}</div>` + byMon[m].map(card).join("");
+    });
+  }
+  $("#p-invio").innerHTML = h;
+  $("#nInvio").textContent = ready && due.length ? due.length : "";
+
+  const sent = all.filter(e=>e.sentOn).sort((a,b)=>b.date.localeCompare(a.date));
+  $("#p-inviati").innerHTML = sent.length ? sent.map(card).join("") : `<div class="empty">Nessun messaggio segnato come inviato.</div>`;
+  $("#nInviati").textContent = sent.length || "";
+
+  const past = all.filter(e=>e.date<today), fut = all.filter(e=>e.date>=today);
+  $("#p-tutti").innerHTML = all.length
+    ? fut.map(card).join("") + (past.length?`<div class="grp">Discorsi passati</div>`+past.slice().reverse().map(card).join(""):"")
+    : `<div class="empty">Nessun programma caricato.</div>`;
+
+  const nf = all.filter(e=>!e.s).length, np = all.filter(e=>!e.phone && e.date>=today).length;
+  $("#headSub").textContent = ready
+    ? `Oggi ${fmtLong(today)} · ${fut.length} discorsi in programma` + (np?` · ${np} senza numero`:"")
+    : "Carica il programma e gli oratori per iniziare.";
+}
+
+function renderImportStatus(){
+  const today = todayISO();
+  if(state.program.length){
+    const fut = state.program.filter(t=>t.date>=today);
+    const last = state.program[state.program.length-1];
+    $("#stProg").innerHTML = `<span class="ok">✓ ${esc(state.progName||"programma")}</span> — ${state.program.length} discorsi, fino al ${esc(fmtShort(last.date))} (${fut.length} futuri)`;
+  }
+  if(state.speakers.length){
+    const cg = new Set(state.speakers.map(s=>s.cong.trim())).size;
+    const missing = state.program.filter(t=>!findSpeaker(t));
+    $("#stSp").innerHTML = `<span class="ok">✓ ${state.speakers.length} oratori</span> da ${cg} congregazioni` +
+      (state.program.length ? (missing.length ? `<br><span class="ko">Non trovati nel programma: ${missing.map(t=>esc(t.speaker)+" ("+esc(t.cong)+")").join(", ")}</span>` : `<br><span class="ok">Tutti gli oratori del programma sono stati trovati</span>`) : "");
+  }
+}
+
+function renderSpeakers(){
+  const q = norm($("#spSearch").value);
+  const rows = state.speakers.filter(s=>!q || norm(`${s.first} ${s.last} ${s.cong}`).includes(q))
+    .sort((a,b)=>norm(a.cong).localeCompare(norm(b.cong)) || norm(a.last).localeCompare(norm(b.last)));
+  $("#spList").innerHTML = state.speakers.length
+    ? `<table class="sp">${rows.map(s=>{const p=cleanPhone(s.phone);return `<tr><td><b>${esc(s.first)} ${esc(s.last)}</b><br><span class="sub" style="font-size:12.5px">${esc(s.cong)}${s.talks?` · discorsi ${esc(s.talks)}`:""}</span></td><td class="ph">${p?esc(showPhone(p)):`<span class="ko">—</span>`}</td></tr>`}).join("")}</table>`
+    : `<div class="empty">Nessun oratore caricato.</div>`;
+}
+
+function renderPreview(){
+  const ml = mapsLink();
+  $("#mapsNote").innerHTML = ml ? `Link usato: <a href="${esc(ml)}" target="_blank" rel="noopener">${esc(ml.length>70?ml.slice(0,70)+"…":ml)}</a> — aprilo per controllare che punti alla Sala giusta.` : "Inserisci l'indirizzo o il link per avere la posizione nel messaggio.";
+  const miss = !state.tpl.includes("{richiesta_cantico}");
+  $("#tplNote").style.display = miss ? "block" : "none";
+  $("#tplNote").textContent = miss ? "Il testo non contiene {richiesta_cantico}: la domanda sul cantico viene aggiunta automaticamente (solo se il cantico manca)." : "";
+  const today = todayISO();
+  const e = list().find(x=>x.date>=today) || list()[0];
+  if(!e){ $("#prev").textContent = fill(ensureSong(state.tpl), {nome:"Mario",cognome:"Rossi",nome_completo:"Mario Rossi",data:"8 novembre",data_completa:"domenica 8 novembre 2026",data_breve:"08/11/2026",giorno:"domenica",numero:"22",tema:"Titolo del discorso",discorso:"n. 22 «Titolo del discorso»",cantico:"",richiesta_cantico:state.settings.songAsk||"",congregazione:"Congregazione",congregazione_ospitante:state.settings.cong||"…",sala:state.settings.sala||"…",mappa:mapsLink()||"…",orario:state.settings.ora||"…",firma:state.settings.firma||""}); $("#prevWho").textContent="Con dati di esempio."; return; }
+  $("#prevWho").textContent = `Con ${e.s?e.s.first+" "+e.s.last:e.speaker}, ${fmtLongY(e.date)}.`;
+  $("#prev").textContent = fill(ensureSong(state.tpl), vars(e));
+}
+
+const CHIPS = [["nome","Nome"],["nome_completo","Nome e cognome"],["data","8 novembre"],["data_completa","domenica 8 novembre 2026"],["data_breve","08/11/2026"],["discorso","n. 22 «Tema»"],["numero","22"],["tema","Tema"],["cantico","N. cantico"],["richiesta_cantico","Domanda sul cantico (solo se manca)"],["congregazione","Congr. dell'oratore"],["congregazione_ospitante","La tua congregazione"],["sala","Indirizzo"],["mappa","Link Google Maps"],["orario","Orario"],["firma","Firma"]];
+function renderTplPanel(){
+  $("#tpl").value = state.tpl;
+  $("#chips").innerHTML = CHIPS.map(([k,l])=>`<button title="${esc(l)}" data-ins="${k}">{${k}}</button>`).join("");
+  $("#sCong").value = state.settings.cong; $("#sOra").value = state.settings.ora;
+  $("#sSala").value = state.settings.sala; $("#sFirma").value = state.settings.firma; $("#sSong").value = state.settings.songAsk; $("#sMaps").value = state.settings.maps;
+}
+
+function renderAll(){ renderLists(); renderImportStatus(); renderSpeakers(); renderPreview(); }
+
+/* ---------- tabs ---------- */
+function go(p){
+  state.tab = p; LS.set("tab",p);
+  document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.p===p));
+  document.querySelectorAll("section.panel").forEach(s=>s.classList.toggle("on",s.id==="p-"+p));
+  if(p==="messaggio") renderPreview();
+}
+window.go = go;
+$("#tabs").onclick = ev => { const b = ev.target.closest("button"); if(b) go(b.dataset.p); };
+
+/* ---------- card events ---------- */
+function findByKey(k){ const t = state.program.find(t=>keyOf(t)===k); return t ? enrich(t) : null; }
+document.addEventListener("click", async ev=>{
+  const a = ev.target.closest("[data-act]"); if(!a) return;
+  const c = a.closest(".talk"); if(!c) return;
+  const k = c.dataset.k, e = findByKey(k); if(!e) return;
+  const act = a.dataset.act;
+  if(act==="toggle"){ state.open.has(k)?state.open.delete(k):state.open.add(k); c.classList.toggle("open"); return; }
+  if(act==="copy"){ const txt = c.querySelector("textarea").value; try{ await navigator.clipboard.writeText(txt); toast("Testo copiato"); }catch(_){ c.querySelector("textarea").select(); toast("Seleziona e copia il testo manualmente"); } return; }
+  if(act==="wa"){
+    if(!e.phone){ ev.preventDefault(); return; }
+    // mark as sent after opening WhatsApp
+    setTimeout(()=>{ state.sent[k]=todayISO(); save(); state.open.delete(k); renderLists(); toast(`Segnato come inviato a ${e.s?e.s.first:e.speaker}. Puoi annullare da “Inviati”.`); }, 400);
+    return;
+  }
+  if(act==="send"){ state.sent[k]=todayISO(); save(); state.open.delete(k); toast("Segnato come inviato"); }
+  if(act==="unsend"){ delete state.sent[k]; save(); toast("Segnato come non inviato"); }
+  if(act==="textReset"){ delete state.custom[k]; save(); }
+  if(act==="phoneReset"){ delete state.phones[spKey(e)]; save(); }
+  renderLists();
+});
+document.addEventListener("input", ev=>{
+  const a = ev.target.closest("[data-act]"); const c = a && a.closest(".talk"); if(!c) return;
+  const k = c.dataset.k, t = state.program.find(t=>keyOf(t)===k); if(!t) return;
+  if(a.dataset.act==="text"){
+    state.custom[k] = a.value; save();
+  }
+  if(a.dataset.act==="phone"){
+    const p = cleanPhone(a.value);
+    if(a.value.trim()) state.phones[spKey(t)] = a.value.trim(); else delete state.phones[spKey(t)];
+    save();
+  }
+  const e = enrich(t), link = c.querySelector("[data-act=wa]");
+  link.href = e.phone ? waLink(e, c.querySelector("textarea").value) : "#";
+  link.setAttribute("aria-disabled", String(!e.phone));
+});
+document.addEventListener("focusout", ev=>{ if(ev.target.matches && ev.target.matches("[data-act=phone]")) renderLists(); });
+
+/* ---------- template panel events ---------- */
+$("#tpl").addEventListener("input", ()=>{ state.tpl = $("#tpl").value; save(); renderPreview(); renderLists(); });
+$("#chips").onclick = ev => {
+  const b = ev.target.closest("[data-ins]"); if(!b) return;
+  const ta = $("#tpl"), s = ta.selectionStart, ins = `{${b.dataset.ins}}`;
+  ta.value = ta.value.slice(0,s) + ins + ta.value.slice(ta.selectionEnd);
+  ta.focus(); ta.selectionStart = ta.selectionEnd = s+ins.length;
+  ta.dispatchEvent(new Event("input"));
+};
+$("#tplReset").onclick = ()=>{ state.tpl = DEFAULT_TPL; save(); $("#tpl").value = state.tpl; renderPreview(); renderLists(); };
+[["#sCong","cong"],["#sOra","ora"],["#sSala","sala"],["#sFirma","firma"],["#sSong","songAsk"],["#sMaps","maps"]].forEach(([id,k])=>{
+  $(id).addEventListener("input", ()=>{ state.settings[k] = $(id).value; save(); renderPreview(); renderLists(); });
+});
+$("#spSearch").addEventListener("input", renderSpeakers);
+$("#wipe").onclick = ()=>{ $("#wipeConfirm").style.display="flex"; };
+$("#wipeNo").onclick = ()=>{ $("#wipeConfirm").style.display="none"; };
+$("#wipeYes").onclick = ()=>{
+  setShared({}); save(); $("#wipeConfirm").style.display="none";
+  renderTplPanel(); renderAll(); toast("Dati cancellati");
+};
+
+/* ---------- salvataggio su GitHub (dati cifrati) ---------- */
+const GH = {owner:"lucioros", repo:"promemoria.oratori", branch:"main", path:"dati.json"};
+const API = `https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.path}`;
+const FORMATO = "promemoria-oratori-cifrato", ITER = 310000;
+const te = new TextEncoder(), td = new TextDecoder();
+const toB64 = u8 => { let s=""; for(let i=0;i<u8.length;i+=0x8000) s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000)); return btoa(s); };
+const fromB64 = b => Uint8Array.from(atob(b.replace(/\s/g,"")), c=>c.charCodeAt(0));
+async function deriveKey(pw, salt, iter){
+  const base = await crypto.subtle.importKey("raw", te.encode(pw), "PBKDF2", false, ["deriveKey"]);
+  return crypto.subtle.deriveKey({name:"PBKDF2", salt, iterations:iter, hash:"SHA-256"}, base, {name:"AES-GCM", length:256}, true, ["encrypt","decrypt"]);
+}
+async function encObj(key, obj){ const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({name:"AES-GCM", iv}, key, te.encode(JSON.stringify(obj))); return {iv:toB64(iv), ct:toB64(new Uint8Array(ct))}; }
+async function decObj(key, e){ const pt = await crypto.subtle.decrypt({name:"AES-GCM", iv:fromB64(e.iv)}, key, fromB64(e.ct)); return JSON.parse(td.decode(pt)); }
+
+let K=null, FILE=null, SHA=null, TOKEN=null, ready=false, saveTimer=null, writing=false, pending=false, lastEdit=0;
+function setStatus(t, err){ const el=$("#status"); el.textContent=t; el.classList.toggle("err", !!err); }
+function ghHeaders(tok){ const h={"Accept":"application/vnd.github+json","X-GitHub-Api-Version":"2022-11-28"}; const t=tok||TOKEN; if(t) h.Authorization="Bearer "+t; return h; }
+
+function save(){
+  lastEdit = Date.now();
+  if(!ready) return;
+  if(!TOKEN){ setStatus("Il salvataggio non è collegato: inserisci il token in Importa file → Salvataggio su GitHub", true); return; }
+  setStatus("Salvataggio…"); clearTimeout(saveTimer);
+  saveTimer = setTimeout(()=>{ saveTimer=null; flush(); }, 1500);
+}
+async function fetchRemote(){
+  if(TOKEN){
+    const r = await fetch(API+"?ref="+GH.branch+"&t="+Date.now(), {headers:ghHeaders(), cache:"no-store"});
+    if(r.status===404) return null;
+    if(r.status===401||r.status===403){ const e=new Error("auth"); e.code="auth"; throw e; }
+    if(!r.ok) throw new Error("GitHub "+r.status);
+    const j = await r.json(); return {file:JSON.parse(td.decode(fromB64(j.content))), sha:j.sha};
+  }
+  // senza token: prima il file pubblicato sul sito, poi l'API pubblica
+  let r = await fetch("dati.json?t="+Date.now(), {cache:"no-store"}).catch(()=>null);
+  if(r && r.ok){ try{ return {file:await r.json(), sha:null}; }catch(_){} }
+  r = await fetch(API+"?ref="+GH.branch+"&t="+Date.now(), {headers:ghHeaders(), cache:"no-store"});
+  if(r.status===404) return null;
+  if(!r.ok) throw new Error("GitHub "+r.status);
+  const j = await r.json(); return {file:JSON.parse(td.decode(fromB64(j.content))), sha:j.sha};
+}
+async function putFile(file, msg, tok){
+  const body = {message:msg, branch:GH.branch, content:toB64(te.encode(JSON.stringify(file)))};
+  if(SHA) body.sha = SHA;
+  const r = await fetch(API, {method:"PUT", headers:Object.assign({"Content-Type":"application/json"}, ghHeaders(tok)), body:JSON.stringify(body)});
+  if(r.status===409||r.status===422){ const e=new Error("conflict"); e.code="conflict"; throw e; }
+  if(r.status===401||r.status===403||r.status===404){ const e=new Error("auth"); e.code="auth"; throw e; }
+  if(!r.ok) throw new Error("GitHub "+r.status);
+  const j = await r.json(); SHA = j.content.sha; FILE = file;
+}
+async function flush(retry){
+  if(writing){ pending=true; return; }
+  writing = true;
+  try{
+    const file = Object.assign({}, FILE, {dati:await encObj(K, getShared()), aggiornato:new Date().toISOString()});
+    await putFile(file, "Promemoria oratori: aggiornamento");
+    setStatus("Salvato su GitHub ✓");
+  }catch(e){
+    if(e.code==="conflict" && !retry){
+      // il file è cambiato da un altro dispositivo: unisco gli invii e riscrivo
+      try{
+        const rem = await fetchRemote();
+        if(rem){ SHA = rem.sha; const d = await decObj(K, rem.file.dati);
+          state.sent = Object.assign({}, d.sent||{}, state.sent); }
+        writing=false; return flush(true);
+      }catch(_){ setStatus("Salvataggio non riuscito: ricarica la pagina", true); }
+    } else if(e.code==="auth") setStatus("Il token di GitHub è scaduto o non ha i permessi: cambialo in Importa file → Salvataggio su GitHub", true);
+    else { setStatus("Salvataggio non riuscito (connessione?). Riprovo…", true); setTimeout(()=>{ if(!saveTimer&&!writing) flush(); }, 5000); }
+  }
+  writing = false;
+  if(pending){ pending=false; flush(); }
+}
+async function rememberKey(on){
+  try{
+    if(on){ const raw = new Uint8Array(await crypto.subtle.exportKey("raw", K)); LS.set("key", {salt:FILE.kdf.salt, k:toB64(raw)}); }
+    else localStorage.removeItem("po_key");
+  }catch(_){}
+}
+async function openWith(key, file, sha){
+  const data = await decObj(key, file.dati);   // lancia se la password è sbagliata
+  K = key; FILE = file; SHA = sha;
+  TOKEN = null; if(file.token){ try{ TOKEN = await decObj(key, file.token); }catch(_){} }
+  if(TOKEN && !SHA){ try{ const fr = await fetchRemote(); if(fr){ FILE=fr.file; SHA=fr.sha; setShared(await decObj(K, FILE.dati)); } else setShared(data); }catch(_){ setShared(data); } }
+  else setShared(data);
+  ready = true;
+  $("#login").classList.add("hidden");
+  renderTplPanel(); renderAll(); renderAccess();
+  go(state.tab || (state.program.length && state.speakers.length ? "invio" : "importa"));
+  setStatus(TOKEN ? "Dati caricati da GitHub ✓" : "Sola lettura: il salvataggio non è collegato", !TOKEN);
+  setInterval(async ()=>{ // aggiorna se i dati cambiano da un altro dispositivo
+    if(document.hidden||!TOKEN||writing||saveTimer||Date.now()-lastEdit<10000) return;
+    try{ const rem = await fetchRemote(); if(rem && rem.sha!==SHA){
+      if(rem.file.kdf.salt!==FILE.kdf.salt){ localStorage.removeItem("po_key"); location.reload(); return; }
+      FILE=rem.file; SHA=rem.sha; setShared(await decObj(K, FILE.dati)); renderTplPanel(); renderAll(); setStatus("Dati aggiornati da un altro dispositivo"); } }catch(_){}
+  }, 60000);
+}
+function renderAccess(){
+  $("#accStato").innerHTML = TOKEN ? `<span class="ok">✓ Salvataggio collegato.</span>` : `<span class="ko">Salvataggio non collegato: inserisci un token.</span>`;
+}
+let REMOTE = null;
+async function start(){
+  $("#repoName").textContent = $("#repoName2").textContent = `${GH.owner}/${GH.repo}`;
+  try{ REMOTE = await fetchRemote(); }
+  catch(e){ $("#lgErr").textContent = "Non riesco a collegarmi a GitHub: "+e.message; }
+  if(REMOTE === null && !$("#lgErr").textContent){ // primo avvio
+    $("#lgOpen").classList.add("hidden"); $("#lgSetup").classList.remove("hidden"); $("#lgBtn").textContent = "Crea e apri"; return;
+  }
+  const saved = LS.get("key", null);
+  if(REMOTE && saved && saved.salt === REMOTE.file.kdf.salt){
+    try{ const key = await crypto.subtle.importKey("raw", fromB64(saved.k), {name:"AES-GCM"}, true, ["encrypt","decrypt"]);
+      await openWith(key, REMOTE.file, REMOTE.sha); return; }catch(_){ localStorage.removeItem("po_key"); }
+  }
+  $("#lgPw").focus();
+}
+$("#loginForm").onsubmit = async ev=>{
+  ev.preventDefault(); const btn=$("#lgBtn"), err=$("#lgErr"); err.textContent="";
+  const setup = !$("#lgSetup").classList.contains("hidden");
+  btn.disabled = true; const lbl = btn.textContent; btn.textContent = "Attendi…";
+  try{
+    if(setup){
+      const pw=$("#lgNew").value, pw2=$("#lgNew2").value, tok=$("#lgTok").value.trim();
+      if(pw.length<10) throw new Error("La password deve avere almeno 10 caratteri.");
+      if(pw!==pw2) throw new Error("Le due password non coincidono.");
+      if(!tok) throw new Error("Incolla il token di GitHub.");
+      const salt = crypto.getRandomValues(new Uint8Array(16)), key = await deriveKey(pw, salt, ITER);
+      setShared({});
+      const file = {formato:FORMATO, v:1, kdf:{salt:toB64(salt), iter:ITER}, dati:await encObj(key, getShared()), token:await encObj(key, tok), aggiornato:new Date().toISOString()};
+      SHA = null;
+      try{ await putFile(file, "Promemoria oratori: prima configurazione", tok); }
+      catch(e){ throw new Error(e.code==="auth" ? "Il token non è valido o non ha il permesso Contents: Read and write su "+GH.repo+"." : e.message); }
+      K = key; await openWith(key, file, SHA);
+    } else {
+      if(!REMOTE) REMOTE = await fetchRemote();
+      const key = await deriveKey($("#lgPw").value, fromB64(REMOTE.file.kdf.salt), REMOTE.file.kdf.iter);
+      try{ await openWith(key, REMOTE.file, REMOTE.sha); }catch(e){ throw new Error("Password errata."); }
+    }
+    await rememberKey($("#lgRemember").checked);
+  }catch(e){ err.textContent = e.message; }
+  btn.disabled = false; btn.textContent = lbl;
+};
+$("#btnLogout").onclick = ()=>{ try{ localStorage.removeItem("po_key"); }catch(_){} location.reload(); };
+$("#btnTok").onclick = ()=>{ $("#tokBox").classList.remove("hidden"); $("#pwBox").classList.add("hidden"); $("#tokIn").value=""; $("#tokErr").textContent=""; };
+$("#tokNo").onclick = ()=>$("#tokBox").classList.add("hidden");
+$("#tokOk").onclick = async ()=>{
+  const t = $("#tokIn").value.trim(); if(!t) return; $("#tokErr").textContent = "Verifico…";
+  const old = TOKEN;
+  try{
+    TOKEN = t; const fr = await fetchRemote(); SHA = fr && fr.sha;
+    await putFile(Object.assign({}, FILE, {token:await encObj(K, t), dati:await encObj(K, getShared())}), "Promemoria oratori: nuovo token");
+    $("#tokBox").classList.add("hidden"); renderAccess(); setStatus("Token aggiornato ✓");
+  }catch(e){ TOKEN = old; $("#tokErr").textContent = e.code==="auth" ? "Il token non è valido o non ha il permesso Contents: Read and write." : e.message; }
+};
+$("#btnPw").onclick = ()=>{ $("#pwBox").classList.remove("hidden"); $("#tokBox").classList.add("hidden"); ["#pwOld","#pwNew","#pwNew2"].forEach(i=>$(i).value=""); $("#pwErr").textContent=""; };
+$("#pwNo").onclick = ()=>$("#pwBox").classList.add("hidden");
+$("#pwOk").onclick = async ()=>{
+  const o=$("#pwOld").value, n=$("#pwNew").value, n2=$("#pwNew2").value, er=$("#pwErr");
+  if(!TOKEN){ er.textContent="Prima collega il salvataggio con un token."; return; }
+  if(n.length<10){ er.textContent="Usa almeno 10 caratteri."; return; }
+  if(n!==n2){ er.textContent="Le due password nuove non coincidono."; return; }
+  er.textContent = "Controllo…";
+  try{
+    const kOld = await deriveKey(o, fromB64(FILE.kdf.salt), FILE.kdf.iter);
+    try{ await decObj(kOld, FILE.dati); }catch(_){ er.textContent="La password attuale non è corretta."; return; }
+    const salt = crypto.getRandomValues(new Uint8Array(16)), kNew = await deriveKey(n, salt, ITER);
+    const file = {formato:FORMATO, v:1, kdf:{salt:toB64(salt), iter:ITER}, dati:await encObj(kNew, getShared()), token:await encObj(kNew, TOKEN), aggiornato:new Date().toISOString()};
+    const fr = await fetchRemote(); SHA = fr && fr.sha;
+    await putFile(file, "Promemoria oratori: cambiata la password"); K = kNew;
+    if(LS.get("key", null)) await rememberKey(true);
+    $("#pwBox").classList.add("hidden"); setStatus("Password cambiata ✓");
+  }catch(e){ er.textContent = "Non riuscito: "+(e.message||e); }
+};
+
+/* ---------- start ---------- */
+start();
+
+</script>
+</body>
+</html>
