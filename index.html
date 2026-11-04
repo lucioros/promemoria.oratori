@@ -170,6 +170,31 @@ ol.steps li{margin:3px 0}
       <label class="f" for="sSong">Domanda sul cantico — va al posto di {richiesta_cantico} solo se nel programma il cantico non è indicato</label>
       <input type="text" id="sSong">
     </div>
+    <div class="box" id="smsBox">
+      <h2>SMS automatici dall'iPhone</h2>
+      <p>Ogni lunedì alle 9 l'iPhone manda da solo un SMS agli oratori del discorso di quella settimana, con il messaggio qui sopra (o quello modificato per il singolo oratore). Gli oratori già avvisati a mano vengono saltati.</p>
+      <label class="row" style="font-size:14px;font-weight:600"><input type="checkbox" id="smsOn"> Attiva gli SMS automatici</label>
+      <div id="smsSetup" class="hidden">
+        <label class="f">Indirizzo per l'app Comandi (tienilo per te: chi lo ha vede i messaggi della settimana)</label>
+        <div class="row"><input type="text" id="smsUrl" readonly style="flex:1;min-width:200px;font-size:13px"><button class="btn sm" id="smsCopy">Copia</button></div>
+        <p class="note"><a id="smsTest" target="_blank" rel="noopener">Controlla che funzioni</a>: apre l'elenco dei prossimi SMS che verranno inviati (non invia niente).</p>
+        <details style="margin-top:8px"><summary style="cursor:pointer;font-weight:600">Come preparare l'iPhone (una volta sola)</summary>
+          <ol class="steps" style="color:var(--ink)">
+            <li>Apri l'app <b>Comandi</b> → <b>Automazione</b> → <b>+</b> → <b>Ora del giorno</b>: <b>9:00</b>, <b>Ogni settimana</b>, solo <b>lunedì</b>. Scegli <b>Esegui immediatamente</b> → Avanti → <b>Nuova automazione vuota</b>.</li>
+            <li>Aggiungi <b>Ottieni contenuti dell'URL</b> e incolla l'indirizzo qui sopra.</li>
+            <li>Aggiungi <b>Ottieni valore del dizionario</b>: Valore per la chiave <b>messaggi</b> in <i>Contenuti dell'URL</i>.</li>
+            <li>Aggiungi <b>Ripeti con ogni elemento</b> in <i>Valore del dizionario</i>. Dentro la ripetizione:
+              <ol type="a">
+                <li><b>Ottieni valore del dizionario</b>: chiave <b>testo</b> in <i>Elemento ripetizione</i></li>
+                <li><b>Invia messaggio</b>: messaggio = <i>Valore del dizionario</i>; destinatari: tocca il campo, scegli <i>Elemento ripetizione</i>, poi chiave <b>telefono</b>. Apri la freccia dell'azione e disattiva <b>Mostra quando eseguito</b>.</li>
+                <li><b>Ottieni valore del dizionario</b>: chiave <b>conferma</b> in <i>Elemento ripetizione</i></li>
+                <li><b>Ottieni contenuti dell'URL</b>: URL = <i>Valore del dizionario</i> (segna l'oratore come avvisato nell'app)</li>
+              </ol></li>
+            <li>Tocca <b>Fine</b>. L'iPhone deve essere acceso e collegato a internet il lunedì alle 9.</li>
+          </ol>
+        </details>
+      </div>
+    </div>
     <div class="box">
       <h2>Anteprima</h2>
       <p id="prevWho">Con il primo discorso in programma.</p>
@@ -252,16 +277,25 @@ const state = {
   settings: {}, progName: "", spName: "",
   open: new Set(), tab: LS.get("tab", null)
 };
-const SHARED = ["program","speakers","sent","custom","phones","tpl","settings","progName","spName"];
+const SHARED = ["program","speakers","sent","sentVia","custom","phones","tpl","settings","progName","spName"];
+const FN_URL = "https://xtrurzwdosudimqhawqt.supabase.co/functions/v1/promemoria-sms";
 function setShared(d){
   d = d || {};
   state.program = d.program || []; state.speakers = d.speakers || [];
-  state.sent = d.sent || {}; state.custom = d.custom || {}; state.phones = d.phones || {};
+  state.sent = d.sent || {}; state.sentVia = d.sentVia || {}; state.custom = d.custom || {}; state.phones = d.phones || {};
   state.tpl = d.tpl || DEFAULT_TPL;
   state.settings = Object.assign({cong:"", ora:"", sala:"", firma:"", maps:"", songAsk:DEFAULT_SONG_ASK}, d.settings || {});
   state.progName = d.progName || ""; state.spName = d.spName || "";
 }
-const getShared = () => Object.fromEntries(SHARED.map(k=>[k,state[k]]));
+// outbox: messaggi già pronti per l'invio automatico (letti dalla funzione SMS)
+function buildOutbox(){
+  const today = todayISO();
+  return state.program.filter(t=>t.date>=today).map(enrich).filter(e=>e.phone).map(e=>({
+    key:e.key, date:e.date, sendOn:e.sendOn, phone:"+"+e.phone,
+    name: e.s ? `${e.s.first} ${e.s.last}` : e.speaker, text: msgFor(e)
+  }));
+}
+const getShared = () => Object.assign(Object.fromEntries(SHARED.map(k=>[k,state[k]])), {outbox: buildOutbox()});
 setShared({});
 
 /* ---------- helpers ---------- */
@@ -496,10 +530,12 @@ function card(e){
   const isToday = !e.sentOn && e.sendOn===today;
   const late = !e.sentOn && e.sendOn<today && e.date>=today;
   const pills = [];
-  if(e.sentOn) pills.push(`<span class="pill sent">✓ Inviato ${fmtDM(e.sentOn)}</span>`);
+  const auto = state.settings.smsAuto;
+  if(e.sentOn) pills.push(`<span class="pill sent">✓ ${state.sentVia[e.key]==="sms"?"SMS automatico inviato":"Inviato"} ${fmtDM(e.sentOn)}</span>`);
+  else if(auto && e.sendOn>today && e.phone) pills.push(`<span class="pill">SMS automatico lunedì ${fmtDM(e.sendOn)} ore 9</span>`);
   else if(isToday) pills.push(`<span class="pill today">Da inviare oggi</span>`);
   else if(late) pills.push(`<span class="pill late">Da inviare (era lunedì ${fmtDM(e.sendOn)})</span>`);
-  else if(e.date>=today) pills.push(`<span class="pill">Invio lunedì ${fmtDM(e.sendOn)}</span>`);
+  else if(e.date>=today && !auto) pills.push(`<span class="pill">Invio lunedì ${fmtDM(e.sendOn)}</span>`);
   if(!e.phone) pills.push(`<span class="pill bad">Numero mancante</span>`);
   if(!e.num) pills.push(`<span class="pill">Tema da definire</span>`);
   pills.push(e.song ? `<span class="pill">Cantico ${esc(e.song)}</span>` : `<span class="pill">Cantico da chiedere</span>`);
@@ -622,6 +658,7 @@ function renderTplPanel(){
   $("#chips").innerHTML = CHIPS.map(([k,l])=>`<button title="${esc(l)}" data-ins="${k}">{${k}}</button>`).join("");
   $("#sCong").value = state.settings.cong; $("#sOra").value = state.settings.ora;
   $("#sSala").value = state.settings.sala; $("#sFirma").value = state.settings.firma; $("#sSong").value = state.settings.songAsk; $("#sMaps").value = state.settings.maps;
+  renderSms();
 }
 
 function renderAll(){ renderLists(); renderImportStatus(); renderSpeakers(); renderPreview(); }
@@ -648,11 +685,11 @@ document.addEventListener("click", async ev=>{
   if(act==="wa"){
     if(!e.phone){ ev.preventDefault(); return; }
     // mark as sent after opening WhatsApp
-    setTimeout(()=>{ state.sent[k]=todayISO(); save(); state.open.delete(k); renderLists(); toast(`Segnato come inviato a ${e.s?e.s.first:e.speaker}. Puoi annullare da “Inviati”.`); }, 400);
+    setTimeout(()=>{ state.sent[k]=todayISO(); delete state.sentVia[k]; save(); state.open.delete(k); renderLists(); toast(`Segnato come inviato a ${e.s?e.s.first:e.speaker}. Puoi annullare da “Inviati”.`); }, 400);
     return;
   }
-  if(act==="send"){ state.sent[k]=todayISO(); save(); state.open.delete(k); toast("Segnato come inviato"); }
-  if(act==="unsend"){ delete state.sent[k]; save(); toast("Segnato come non inviato"); }
+  if(act==="send"){ state.sent[k]=todayISO(); delete state.sentVia[k]; save(); state.open.delete(k); toast("Segnato come inviato"); }
+  if(act==="unsend"){ delete state.sent[k]; delete state.sentVia[k]; save(); toast("Segnato come non inviato"); }
   if(act==="textReset"){ delete state.custom[k]; save(); }
   if(act==="phoneReset"){ delete state.phones[spKey(e)]; save(); }
   renderLists();
@@ -673,6 +710,25 @@ document.addEventListener("input", ev=>{
   link.setAttribute("aria-disabled", String(!e.phone));
 });
 document.addEventListener("focusout", ev=>{ if(ev.target.matches && ev.target.matches("[data-act=phone]")) renderLists(); });
+
+/* ---------- SMS automatici ---------- */
+function renderSms(){
+  const on = !!state.settings.smsAuto;
+  $("#smsOn").checked = on; $("#smsSetup").classList.toggle("hidden", !on);
+  if(on && state.settings.smsKey){
+    const u = `${FN_URL}?k=${state.settings.smsKey}`;
+    $("#smsUrl").value = u; $("#smsTest").href = u+"&anteprima=1";
+  }
+}
+$("#smsOn").addEventListener("change", ()=>{
+  state.settings.smsAuto = $("#smsOn").checked;
+  if(state.settings.smsAuto && !state.settings.smsKey){
+    const b = crypto.getRandomValues(new Uint8Array(18));
+    state.settings.smsKey = toB64(b).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+  }
+  save(); renderSms(); renderLists();
+});
+$("#smsCopy").onclick = async ()=>{ try{ await navigator.clipboard.writeText($("#smsUrl").value); toast("Indirizzo copiato"); }catch(_){ $("#smsUrl").select(); toast("Seleziona e copia l'indirizzo"); } };
 
 /* ---------- template panel events ---------- */
 $("#tpl").addEventListener("input", ()=>{ state.tpl = $("#tpl").value; save(); renderPreview(); renderLists(); });
