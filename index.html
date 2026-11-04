@@ -171,17 +171,33 @@ ol.steps li{margin:3px 0}
       <input type="text" id="sSong">
     </div>
     <div class="box" id="smsBox">
-      <h2>SMS automatici dall'iPhone</h2>
-      <p>Ogni lunedì alle 9 l'iPhone manda da solo un SMS agli oratori del discorso di quella settimana, con il messaggio qui sopra (o quello modificato per il singolo oratore). Gli oratori già avvisati a mano vengono saltati.</p>
-      <label class="row" style="font-size:14px;font-weight:600"><input type="checkbox" id="smsOn"> Attiva gli SMS automatici</label>
+      <h2>Automazioni dall'iPhone</h2>
+      <p>Con l'app <b>Comandi</b> dell'iPhone, ogni lunedì:</p>
+      <ul class="steps" style="margin-top:0">
+        <li><b>alle 8:30</b> ricevi una notifica con gli oratori da avvisare quel giorno, così puoi mandare anche il messaggio WhatsApp;</li>
+        <li><b>alle 9:00</b> (se attivi gli SMS automatici) parte da solo un SMS con il messaggio qui sopra. Chi hai già avvisato viene saltato.</li>
+      </ul>
+      <label class="row" style="font-size:14px;font-weight:600"><input type="checkbox" id="smsOn"> Attiva gli SMS automatici delle 9:00</label>
+      <div id="smsNoKey" style="margin-top:12px"><button class="btn sm" id="smsMake">Crea gli indirizzi per Comandi</button></div>
       <div id="smsSetup" class="hidden">
-        <label class="f">Indirizzo per l'app Comandi (tienilo per te: chi lo ha vede i messaggi della settimana)</label>
-        <div class="row"><input type="text" id="smsUrl" readonly style="flex:1;min-width:200px;font-size:13px"><button class="btn sm" id="smsCopy">Copia</button></div>
-        <p class="note"><a id="smsTest" target="_blank" rel="noopener">Controlla che funzioni</a>: apre l'elenco dei prossimi SMS che verranno inviati (non invia niente).</p>
-        <details style="margin-top:8px"><summary style="cursor:pointer;font-weight:600">Come preparare l'iPhone (una volta sola)</summary>
+        <p class="note">Tieni per te questi indirizzi: chi li ha vede i messaggi della settimana. <a id="smsTest" target="_blank" rel="noopener">Controlla che funzionino</a> (mostra i prossimi SMS, non invia niente).</p>
+        <label class="f">Indirizzo per la notifica delle 8:30</label>
+        <div class="row"><input type="text" id="avvUrl" readonly style="flex:1;min-width:200px;font-size:13px"><button class="btn sm" data-copy="#avvUrl">Copia</button></div>
+        <label class="f">Indirizzo per gli SMS delle 9:00</label>
+        <div class="row"><input type="text" id="smsUrl" readonly style="flex:1;min-width:200px;font-size:13px"><button class="btn sm" data-copy="#smsUrl">Copia</button></div>
+        <details style="margin-top:10px"><summary style="cursor:pointer;font-weight:600">Automazione 1 — notifica alle 8:30</summary>
           <ol class="steps" style="color:var(--ink)">
-            <li>Apri l'app <b>Comandi</b> → <b>Automazione</b> → <b>+</b> → <b>Ora del giorno</b>: <b>9:00</b>, <b>Ogni settimana</b>, solo <b>lunedì</b>. Scegli <b>Esegui immediatamente</b> → Avanti → <b>Nuova automazione vuota</b>.</li>
-            <li>Aggiungi <b>Ottieni contenuti dell'URL</b> e incolla l'indirizzo qui sopra.</li>
+            <li>App <b>Comandi</b> → <b>Automazione</b> → <b>+</b> → <b>Ora del giorno</b>: <b>8:30</b>, <b>Ogni settimana</b>, solo <b>lunedì</b>. Scegli <b>Esegui immediatamente</b> → Avanti → <b>Nuova automazione vuota</b>.</li>
+            <li>Aggiungi <b>Ottieni contenuti dell'URL</b> e incolla l'indirizzo per la notifica.</li>
+            <li>Aggiungi <b>Se</b>: <i>Contenuti dell'URL</i> <b>ha qualsiasi valore</b>.</li>
+            <li>Dentro il «Se» aggiungi <b>Mostra notifica</b> con testo <i>Contenuti dell'URL</i> e titolo «Promemoria oratori».</li>
+            <li>Tocca <b>Fine</b>. Per aprire l'app al volo, aggiungila alla schermata Home da Safari (Condividi → Aggiungi a Home).</li>
+          </ol>
+        </details>
+        <details style="margin-top:8px"><summary style="cursor:pointer;font-weight:600">Automazione 2 — SMS alle 9:00</summary>
+          <ol class="steps" style="color:var(--ink)">
+            <li>App <b>Comandi</b> → <b>Automazione</b> → <b>+</b> → <b>Ora del giorno</b>: <b>9:00</b>, <b>Ogni settimana</b>, solo <b>lunedì</b>. Scegli <b>Esegui immediatamente</b> → Avanti → <b>Nuova automazione vuota</b>.</li>
+            <li>Aggiungi <b>Ottieni contenuti dell'URL</b> e incolla l'indirizzo per gli SMS.</li>
             <li>Aggiungi <b>Ottieni valore del dizionario</b>: Valore per la chiave <b>messaggi</b> in <i>Contenuti dell'URL</i>.</li>
             <li>Aggiungi <b>Ripeti con ogni elemento</b> in <i>Valore del dizionario</i>. Dentro la ripetizione:
               <ol type="a">
@@ -190,9 +206,10 @@ ol.steps li{margin:3px 0}
                 <li><b>Ottieni valore del dizionario</b>: chiave <b>conferma</b> in <i>Elemento ripetizione</i></li>
                 <li><b>Ottieni contenuti dell'URL</b>: URL = <i>Valore del dizionario</i> (segna l'oratore come avvisato nell'app)</li>
               </ol></li>
-            <li>Tocca <b>Fine</b>. L'iPhone deve essere acceso e collegato a internet il lunedì alle 9.</li>
+            <li>Tocca <b>Fine</b>. Se gli SMS automatici sono disattivati qui sopra, l'automazione non invia niente.</li>
           </ol>
         </details>
+        <p class="note">Il lunedì mattina l'iPhone deve essere acceso e collegato a internet.</p>
       </div>
     </div>
     <div class="box">
@@ -713,22 +730,28 @@ document.addEventListener("focusout", ev=>{ if(ev.target.matches && ev.target.ma
 
 /* ---------- SMS automatici ---------- */
 function renderSms(){
-  const on = !!state.settings.smsAuto;
-  $("#smsOn").checked = on; $("#smsSetup").classList.toggle("hidden", !on);
-  if(on && state.settings.smsKey){
-    const u = `${FN_URL}?k=${state.settings.smsKey}`;
-    $("#smsUrl").value = u; $("#smsTest").href = u+"&anteprima=1";
+  const key = state.settings.smsKey;
+  $("#smsOn").checked = !!state.settings.smsAuto;
+  $("#smsNoKey").classList.toggle("hidden", !!key); $("#smsSetup").classList.toggle("hidden", !key);
+  if(key){
+    const u = `${FN_URL}?k=${key}`;
+    $("#smsUrl").value = u; $("#avvUrl").value = u+"&avviso=1"; $("#smsTest").href = u+"&anteprima=1";
   }
 }
+function ensureKey(){
+  if(state.settings.smsKey) return;
+  const b = crypto.getRandomValues(new Uint8Array(18));
+  state.settings.smsKey = toB64(b).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+}
 $("#smsOn").addEventListener("change", ()=>{
-  state.settings.smsAuto = $("#smsOn").checked;
-  if(state.settings.smsAuto && !state.settings.smsKey){
-    const b = crypto.getRandomValues(new Uint8Array(18));
-    state.settings.smsKey = toB64(b).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
-  }
+  state.settings.smsAuto = $("#smsOn").checked; ensureKey();
   save(); renderSms(); renderLists();
 });
-$("#smsCopy").onclick = async ()=>{ try{ await navigator.clipboard.writeText($("#smsUrl").value); toast("Indirizzo copiato"); }catch(_){ $("#smsUrl").select(); toast("Seleziona e copia l'indirizzo"); } };
+$("#smsMake").onclick = ()=>{ ensureKey(); save(); renderSms(); };
+document.querySelectorAll("[data-copy]").forEach(bt=>bt.onclick = async ()=>{
+  const inp = $(bt.dataset.copy);
+  try{ await navigator.clipboard.writeText(inp.value); toast("Indirizzo copiato"); }catch(_){ inp.select(); toast("Seleziona e copia l'indirizzo"); }
+});
 
 /* ---------- template panel events ---------- */
 $("#tpl").addEventListener("input", ()=>{ state.tpl = $("#tpl").value; save(); renderPreview(); renderLists(); });

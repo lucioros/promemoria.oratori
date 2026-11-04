@@ -31,8 +31,8 @@ Anche il token di GitHub che serve per salvare è cifrato nello stesso file.
 
 ## SMS automatici dall'iPhone
 
-Ogni lunedì alle 9 un'automazione dell'app **Comandi** chiede alla funzione Supabase `promemoria-sms` (codice in `supabase/promemoria-sms/index.ts`) i messaggi del giorno, li invia come SMS dal tuo numero e li segna come inviati nell'app.
+Ogni lunedì alle 8:30 un'automazione dell'app **Comandi** ti manda una notifica con gli oratori da avvisare; alle 9 un'altra automazione dell'app **Comandi** chiede alla funzione Supabase `promemoria-sms` (codice in `supabase/promemoria-sms/index.ts`) i messaggi del giorno, li invia come SMS dal tuo numero e li segna come inviati nell'app.
 
 - La funzione decifra `dati.json` con la password salvata nel secret `APP_PASSWORD` del progetto Supabase.
-- L'indirizzo da usare in Comandi, con la chiave personale, si trova nell'app: **Messaggio → SMS automatici dall'iPhone**. Lì ci sono anche le istruzioni passo passo.
+- Gli indirizzi da usare in Comandi (notifica delle 8:30 e SMS delle 9:00), con la chiave personale, si trovano nell'app: **Messaggio → Automazioni dall'iPhone**, con le istruzioni passo passo.
 - Se cambi la password dell'app, aggiorna anche il secret `APP_PASSWORD`.

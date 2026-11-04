@@ -3,6 +3,7 @@
 //   GET ?k=CHIAVE              -> messaggi da inviare oggi
 //   GET ?k=CHIAVE&fatto=ID     -> segna l'oratore come avvisato (scrive dati.json su GitHub)
 //   GET ?k=CHIAVE&anteprima=1  -> tutti i prossimi SMS, per controllo (non invia niente)
+//   GET ?k=CHIAVE&avviso=1     -> testo della notifica per chi gestisce l'app (vuoto se oggi nessuno)
 // Secret richiesto: APP_PASSWORD (la password dell'app). La CHIAVE è nei dati cifrati.
 
 const OWNER = "lucioros", REPO = "promemoria.oratori", BRANCH = "main", PATH = "dati.json";
@@ -94,6 +95,20 @@ Deno.serve(async (req: Request) => {
 
     const base = `${url.origin}${url.pathname}?k=${encodeURIComponent(k)}`;
     const pronti = outbox.filter((o) => !sent[o.key] && o.date >= oggi);
+
+    // avviso per chi gestisce l'app (notifica alle 8:30): testo semplice, vuoto se oggi non c'è nessuno
+    if (url.searchParams.get("avviso")) {
+      const oggiList = pronti.filter((o) => o.sendOn <= oggi);
+      const fmt = (d: string) => new Date(d + "T12:00:00Z").toLocaleDateString("it-IT", { day: "numeric", month: "long", timeZone: "UTC" });
+      let testo = "";
+      if (oggiList.length) {
+        const nomi = oggiList.map((o) => `${o.name} (discorso del ${fmt(o.date)})`).join(", ");
+        testo = st.smsAuto
+          ? `Oggi alle 9 partirà l'SMS automatico per: ${nomi}. Se vuoi, manda anche il messaggio WhatsApp dall'app Promemoria oratori.`
+          : `Oggi devi avvisare: ${nomi}. Apri l'app Promemoria oratori per mandare il messaggio WhatsApp.`;
+      }
+      return new Response(testo, { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" } });
+    }
 
     if (url.searchParams.get("anteprima")) {
       return json({
