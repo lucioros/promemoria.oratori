@@ -6,7 +6,7 @@ Invia via WhatsApp, il lunedì prima del discorso, il promemoria agli oratori de
 
 ## Come si usa
 
-1. **Importa file**: carica il CSV del programma dei discorsi e lo ZIP degli oratori (un CSV per congregazione), così come li esporti dall'app.
+1. **Importa file**: carica il programma dei discorsi e gli oratori, così come li esporti dall'app: CSV, Excel (.xlsx) o ZIP con un file per congregazione. Un file Excel con più fogli può contenere un foglio per congregazione.
 2. **Messaggio**: imposta il testo predefinito e i dati della congregazione (indirizzo, link Google Maps, orario, firma).
 3. **Da inviare**: ogni lunedì trovi gli oratori da avvisare. Puoi modificare il messaggio per il singolo oratore e aprirlo in WhatsApp con il testo già scritto.
 

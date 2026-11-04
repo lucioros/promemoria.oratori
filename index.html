@@ -35,7 +35,7 @@ section.panel.on{display:block}
 .drop{display:flex;align-items:center;gap:12px;border:1.5px dashed var(--line);border-radius:10px;padding:14px;cursor:pointer}
 .drop:hover,.drop.over{border-color:var(--accent);background:var(--accent-soft)}
 .drop input{display:none}
-.drop .ic{width:38px;height:38px;border-radius:9px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;flex:none;font-weight:700}
+.drop .ic{width:38px;height:38px;font-size:10px;line-height:1.1;text-align:center;border-radius:9px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;flex:none;font-weight:700}
 .drop .t{font-weight:600}
 .drop .s{color:var(--muted);font-size:13px}
 .ok{color:var(--accent)} .ko{color:var(--bad)}
@@ -229,13 +229,13 @@ ol.steps li{margin:3px 0}
   <section class="panel" id="p-importa">
     <div class="box">
       <h2>1. Programma dei discorsi</h2>
-      <p>Il file CSV esportato (es. <i>discorsi.csv</i>).</p>
-      <label class="drop" id="dropProg"><input type="file" id="fProg" accept=".csv,text/csv"><span class="ic">CSV</span><span><span class="t">Scegli il programma</span><br><span class="s" id="stProg">Nessun file caricato</span></span></label>
+      <p>Il file esportato, in formato CSV o Excel (.xlsx).</p>
+      <label class="drop" id="dropProg"><input type="file" id="fProg" accept=".csv,.xlsx,.xlsm,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"><span class="ic">CSV<br>XLS</span><span><span class="t">Scegli il programma</span><br><span class="s" id="stProg">Nessun file caricato</span></span></label>
     </div>
     <div class="box">
       <h2>2. Oratori</h2>
-      <p>Il file ZIP con un CSV per congregazione (puoi anche selezionare direttamente più CSV).</p>
-      <label class="drop" id="dropSp"><input type="file" id="fSp" accept=".zip,.csv,application/zip,text/csv" multiple><span class="ic">ZIP</span><span><span class="t">Scegli gli oratori</span><br><span class="s" id="stSp">Nessun file caricato</span></span></label>
+      <p>Il file ZIP con un file per congregazione (CSV o Excel), oppure uno o più file CSV/Excel. In un file Excel con più fogli, ogni foglio può essere una congregazione.</p>
+      <label class="drop" id="dropSp"><input type="file" id="fSp" accept=".zip,.csv,.xlsx,.xlsm,.xls,application/zip,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" multiple><span class="ic">ZIP<br>XLS</span><span><span class="t">Scegli gli oratori</span><br><span class="s" id="stSp">Nessun file caricato</span></span></label>
     </div>
     <div class="box">
       <h2>Salvataggio su GitHub</h2>
@@ -328,7 +328,7 @@ function decodeBytes(u8){
   catch(e){ s = new TextDecoder("windows-1252").decode(u8); }
   return s.replace(/^﻿/,"");
 }
-function parseCSV(text){
+function csvRows(text){
   const first = text.split(/\r?\n/)[0] || "";
   const cnt = ch => first.split(ch).length;
   const d = [",",";","\t"].sort((a,b)=>cnt(b)-cnt(a))[0];
@@ -342,13 +342,87 @@ function parseCSV(text){
     else f+=c;
   }
   if(f!==""||row.length){ row.push(f); rows.push(row); }
-  const hdr = (rows.shift()||[]).map(h=>norm(h).replace(/\s/g,""));
-  return rows.filter(r=>r.some(x=>x.trim()!=="")).map(r=>{ const o={}; hdr.forEach((h,i)=>o[h]=(r[i]??"").trim()); return o; });
+  return rows;
+}
+// intestazioni riconosciute: servono a trovare la riga dei titoli anche se il foglio ha righe sopra
+const HDR_KEYS = ["date","data","publicspeaker","speaker","oratore","firstname","nome","lastname","cognome","congregation","congregazione"];
+const hkey = h => norm(h).replace(/[\s._\-]/g,"");
+function toObjects(rows){
+  rows = rows.map(r=>r.map(x=>String(x??"")));
+  let hi = rows.slice(0,15).findIndex(r=>r.filter(c=>HDR_KEYS.includes(hkey(c))).length>=2);
+  if(hi<0) hi = 0;
+  const hdr = (rows[hi]||[]).map(hkey);
+  return rows.slice(hi+1).filter(r=>r.some(x=>x.trim()!=="")).map(r=>{ const o={}; hdr.forEach((h,i)=>{ if(h && !(h in o && o[h]!=="")) o[h]=(r[i]??"").trim(); }); return o; });
+}
+const parseCSV = text => toObjects(csvRows(text));
+
+/* ---------- Excel .xlsx (senza librerie: è uno ZIP con file XML) ---------- */
+const isZip = u8 => u8.length>4 && u8[0]===0x50 && u8[1]===0x4b && u8[2]===3 && u8[3]===4;
+const isOldXls = u8 => u8.length>8 && u8[0]===0xd0 && u8[1]===0xcf && u8[2]===0x11 && u8[3]===0xe0;
+async function readXlsx(buf){
+  const files = {}; for(const z of await unzip(buf)) files[z.name.replace(/^\//,"")] = z.data;
+  const xml = n => files[n] ? new DOMParser().parseFromString(decodeBytes(files[n]),"application/xml") : null;
+  const wb = xml("xl/workbook.xml"); if(!wb) throw new Error("file Excel non valido");
+  const all = (doc, tag) => [...doc.getElementsByTagNameNS("*", tag)];
+  // testi condivisi
+  const ss = xml("xl/sharedStrings.xml");
+  const shared = ss ? all(ss,"si").map(si=>all(si,"t").filter(t=>!t.closest||!t.parentNode||t.parentNode.localName!=="rPh").map(t=>t.textContent).join("")) : [];
+  // fogli nell'ordine della cartella
+  const rels = {}; const rd = xml("xl/_rels/workbook.xml.rels");
+  if(rd) all(rd,"Relationship").forEach(x=>rels[x.getAttribute("Id")] = x.getAttribute("Target"));
+  const colIdx = ref => { let n=0; for(const ch of ref.replace(/\d+$/,"")) n = n*26 + ch.charCodeAt(0)-64; return n-1; };
+  const sheets = [];
+  for(const sh of all(wb,"sheet")){
+    const rid = sh.getAttribute("r:id") || [...sh.attributes].find(a=>a.localName==="id")?.value;
+    let tgt = rels[rid]; if(!tgt) continue;
+    tgt = tgt.startsWith("/") ? tgt.slice(1) : "xl/"+tgt.replace(/^\.\//,"");
+    const doc = xml(tgt); if(!doc) continue;
+    const rows = [];
+    for(const row of all(doc,"row")){
+      const cells = [];
+      for(const c of all(row,"c")){
+        const t = c.getAttribute("t"), v = all(c,"v")[0];
+        let val = "";
+        if(t==="s") val = shared[+(v?.textContent)] ?? "";
+        else if(t==="inlineStr") val = all(c,"t").map(x=>x.textContent).join("");
+        else if(t==="b") val = v?.textContent==="1" ? "TRUE" : "FALSE";
+        else val = v ? v.textContent : "";
+        const ref = c.getAttribute("r"); const i = ref ? colIdx(ref) : cells.length;
+        cells[i] = val;
+      }
+      rows.push(Array.from(cells, x=>x??""));
+    }
+    if(rows.some(r=>r.some(x=>String(x).trim()))) sheets.push({name: sh.getAttribute("name")||"", rows});
+  }
+  return sheets;
+}
+// legge un file (CSV, XLSX o ZIP) e restituisce i fogli trovati: [{nome, righe}]
+async function readTables(name, u8){
+  const base = n => n.split("/").pop().replace(/\.(csv|xlsx|xlsm|txt)$/i,"");
+  if(isOldXls(u8)) throw new Error(`${name}: è un file Excel vecchio (.xls). Aprilo con Excel e salvalo come .xlsx o .csv`);
+  if(isZip(u8)){
+    const entries = await unzip(u8.buffer.slice(u8.byteOffset, u8.byteOffset+u8.byteLength));
+    if(entries.some(z=>z.name==="xl/workbook.xml")){
+      const sh = await readXlsx(u8.buffer.slice(u8.byteOffset, u8.byteOffset+u8.byteLength));
+      return sh.map(x=>({nome: sh.length>1 ? x.name : base(name), righe: toObjects(x.rows)}));
+    }
+    let out = [];
+    for(const z of entries){
+      if(/\.(csv|txt)$/i.test(z.name)) out.push({nome: base(z.name), righe: parseCSV(decodeBytes(z.data))});
+      else if(/\.(xlsx|xlsm)$/i.test(z.name)) out = out.concat(await readTables(z.name, z.data));
+    }
+    return out;
+  }
+  return [{nome: base(name), righe: parseCSV(decodeBytes(u8))}];
 }
 const pick = (o, names) => { for(const n of names){ if(o[n]!=null && o[n]!=="") return o[n]; } return ""; };
 
 function parseDate(s){
   s = String(s||"").trim(); let m;
+  if(/^\d{5}(\.\d+)?$/.test(s) && +s>30000 && +s<80000){ // data Excel (giorni dal 30/12/1899)
+    const dt = new Date(Date.UTC(1899,11,30) + Math.floor(+s)*86400000);
+    return iso(dt.getUTCFullYear(), dt.getUTCMonth()+1, dt.getUTCDate());
+  }
   if((m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))) return iso(+m[1],+m[2],+m[3]);
   if((m = s.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})/))){ let y=+m[3]; if(y<100) y+=2000; return iso(y,+m[2],+m[1]); }
   return null;
@@ -401,28 +475,28 @@ async function unzip(buf){
 }
 
 /* ---------- import ---------- */
-function importProgram(text){
-  const rows = parseCSV(text), out=[];
+function importProgram(rows){
+  const out=[];
   for(const r of rows){
     const date = parseDate(pick(r,["date","data"]));
-    const speaker = pick(r,["publicspeaker","speaker","oratore"]);
+    const speaker = pick(r,["publicspeaker","speaker","oratore","nomeoratore"]);
     if(!date || !speaker) continue;
-    let num = pick(r,["outlinenumber","numero","number","n"]);
-    let title = pick(r,["outlinename","tema","titolo","title"]);
+    let num = String(pick(r,["outlinenumber","numero","numerodiscorso","ndiscorso","schema","number","n"])).replace(/\.0+$/,"");
+    let title = pick(r,["outlinename","tema","titolo","title","temadeldiscorso"]);
     title = title.replace(/^\s*\d+\s*[-–.]\s*/,"").trim();
-    out.push({date, cong:pick(r,["congregation","congregazione"]).trim(), speaker:speaker.trim(), num, title, song:pick(r,["song","cantico"])});
+    out.push({date, cong:pick(r,["congregation","congregazione"]).trim(), speaker:speaker.trim(), num, title, song:String(pick(r,["song","cantico","ncantico"])).replace(/\.0+$/,"")});
   }
   out.sort((a,b)=>a.date.localeCompare(b.date));
   return out;
 }
-function importSpeakers(text, fileCong){
-  return parseCSV(text).map(r=>({
+function importSpeakers(rows, fileCong){
+  return rows.map(r=>({
     cong: (pick(r,["congregation","congregazione"])||fileCong).trim(),
     first: pick(r,["firstname","nome"]).trim(),
     last: pick(r,["lastname","cognome"]).trim(),
-    phone: pick(r,["phonemobile","cellulare","mobile","phone","telefono"]),
+    phone: String(pick(r,["phonemobile","cellulare","mobile","phone","telefono","numeroditelefono","tel"])).replace(/\.0+$/,""),
     email: pick(r,["email"]),
-    talks: pick(r,["publictalkscangive","discorsi"])
+    talks: pick(r,["publictalkscangive","discorsi","schemi"])
   })).filter(s=>s.first||s.last);
 }
 
@@ -434,7 +508,8 @@ function setupDrop(el, input){
 $("#fProg").onchange = async ev => {
   const f = ev.target.files[0]; if(!f) return;
   try{
-    const prog = importProgram(decodeBytes(new Uint8Array(await f.arrayBuffer())));
+    const tabs = await readTables(f.name, new Uint8Array(await f.arrayBuffer()));
+    const prog = importProgram(tabs.flatMap(t=>t.righe));
     if(!prog.length) throw new Error("nessun discorso trovato");
     state.program = prog; state.progName = f.name;
     save(); save();
@@ -448,14 +523,8 @@ $("#fSp").onchange = async ev => {
   try{
     let list=[];
     for(const f of files){
-      const buf = await f.arrayBuffer();
-      if(/\.zip$/i.test(f.name) || new DataView(buf).getUint32(0,true)===0x04034b50){
-        for(const z of await unzip(buf)){
-          if(!/\.csv$/i.test(z.name)) continue;
-          const base = z.name.split("/").pop().replace(/\.csv$/i,"");
-          list = list.concat(importSpeakers(decodeBytes(z.data), base));
-        }
-      } else list = list.concat(importSpeakers(decodeBytes(new Uint8Array(buf)), f.name.replace(/\.csv$/i,"")));
+      for(const t of await readTables(f.name, new Uint8Array(await f.arrayBuffer())))
+        list = list.concat(importSpeakers(t.righe, t.nome));
     }
     if(!list.length) throw new Error("nessun oratore trovato");
     state.speakers = list; state.spName = files.map(f=>f.name).join(", ");
